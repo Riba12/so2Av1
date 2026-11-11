@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="pt-BR">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gráficos do benchmark SO2</title>
+<!-- Abrir no navegador mostra os 3 gráficos. Com ?g=1, ?g=2 ou ?g=3 mostra só um, no tema claro, pronto para
+     virar imagem (print da página). -->
+<script>
+  const g = new URLSearchParams(location.search).get("g");
+  if (g) { document.documentElement.setAttribute("data-theme", "light"); document.documentElement.classList.add("export", "g" + g); }
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: os 3 gráficos escolhidos, um por cartão, em coluna larga */
+:root {
+  --page: #f6f6f3; --surface: #fcfcfb; --ink: #0b0b0b; --ink2: #52514e; --muted: #898781;
+  --grid: #e1e0d9; --axis: #c3c2b7; --line: #e4e3dc;
+  --c-ativo: #2a78d6; --c-prep: #1baf7a; --c-leit: #eda100;
+  --o1: #86b6ef; --o2: #3987e5; --o4: #0d366b;
+  --div-pos: #2a78d6; --div-neg: #e34948; --div-mid: #f0efec;
+  --tag-new: #dcebfb; --tag-new-ink: #104281;
+  --sans: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --page: #0f0f0e; --surface: #1a1a19; --ink: #f0efec; --ink2: #c3c2b7; --muted: #898781;
+  --grid: #2c2c2a; --axis: #383835; --line: #2c2c2a;
+  --c-ativo: #3987e5; --c-prep: #199e70; --c-leit: #c98500;
+  --o1: #184f95; --o2: #2a78d6; --o4: #b7d3f6;
+  --div-pos: #3987e5; --div-neg: #e66767; --div-mid: #383835;
+  --tag-new: #13304f; --tag-new-ink: #b7d3f6; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --page: #0f0f0e; --surface: #1a1a19; --ink: #f0efec; --ink2: #c3c2b7; --muted: #898781;
+  --grid: #2c2c2a; --axis: #383835; --line: #2c2c2a;
+  --c-ativo: #3987e5; --c-prep: #199e70; --c-leit: #c98500;
+  --o1: #184f95; --o2: #2a78d6; --o4: #b7d3f6;
+  --div-pos: #3987e5; --div-neg: #e66767; --div-mid: #383835;
+  --tag-new: #13304f; --tag-new-ink: #b7d3f6; color-scheme: dark }
+
+body { background: var(--page); color: var(--ink); font-family: var(--sans); font-size: 15px; line-height: 1.5; }
+.wrap { max-width: 920px; margin: 0 auto; padding-block: 28px 56px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+header { display: grid; gap: 6px; margin-bottom: 22px; max-width: 72ch; }
+.eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+h1 { font-size: 28px; font-weight: 600; margin: 0; text-wrap: balance; letter-spacing: -.01em; }
+header p { margin: 0; color: var(--ink2); }
+.stack { display: grid; gap: 18px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 18px 18px 14px; display: grid; gap: 10px; min-width: 0; }
+.head { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+.id { font-family: var(--mono); font-weight: 500; font-size: 13px; padding: 1px 7px; border: 1px solid var(--axis); border-radius: 4px; }
+h2 { font-size: 17px; font-weight: 600; margin: 0; flex: 1 1 260px; text-wrap: balance; }
+.tag { font-family: var(--mono); font-size: 11.5px; padding: 2px 8px; border-radius: 99px; background: var(--tag-new); color: var(--tag-new-ink); white-space: nowrap; }
+.what { margin: 0; color: var(--ink2); font-size: 14px; max-width: 75ch; }
+.legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 13px; color: var(--ink2); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.sw { width: 18px; height: 0; border-top: 2.5px solid; display: inline-block; }
+.sw.dash { border-top-style: dashed; }
+.sq { width: 11px; height: 11px; border-radius: 2px; display: inline-block; }
+svg { width: 100%; height: auto; display: block; overflow: visible; }
+svg text { font-family: var(--mono); font-size: 11px; fill: var(--muted); }
+svg .lbl { fill: var(--ink2); font-size: 11.5px; }
+svg .strong { fill: var(--ink); font-weight: 500; }
+.chartbox { overflow-x: auto; }
+.pair { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 16px; }
+.pair > div { min-width: 0; }
+.ptitle { font-family: var(--mono); font-size: 13px; font-weight: 500; margin: 0 0 4px; color: var(--ink); }
+#tip { position: fixed; pointer-events: none; background: var(--ink); color: var(--surface); font-family: var(--mono);
+  font-size: 12px; padding: 6px 9px; border-radius: 4px; line-height: 1.4; white-space: pre; z-index: 20; }
+.hit { fill: transparent; }
+footer { margin-top: 24px; color: var(--muted); font-size: 13px; max-width: 80ch; }
+/* modo imagem: um grafico so, sem textos da pagina */
+.export body { background: #ffffff; }
+.export header, .export footer, .export .what, .export .id, .export .tag { display: none; }
+.export .wrap { max-width: none; width: 1100px; padding: 0; margin: 0; }
+.export .card { border: 0; border-radius: 0; background: #ffffff; padding: 28px 32px 22px; }
+.export h2 { font-size: 22px; }
+.export .legend { font-size: 15px; }
+.export .stack > .card { display: none; }
+.g1 .stack > .card:nth-child(1), .g2 .stack > .card:nth-child(2), .g3 .stack > .card:nth-child(3) { display: grid; }
+.g2 .wrap { width: 860px; }
+.g3 .pair { grid-template-columns: 1fr 1fr; }
+</style>
+
+<div class="wrap">
+  <header>
+    <span class="eyebrow">Análise de mercado · SO2 · benchmark de 07/11 · versão 3</span>
+    <h1>Os três gráficos escolhidos</h1>
+    <p>As três versões aparecem nos três gráficos: no 1, cada quantidade tem uma barra de threads e uma de processos; no 3, um painel para cada, na mesma escala. Passe o mouse nos pontos para ver os valores.</p>
+  </header>
+
+  <div class="stack">
+    <section class="card">
+      <div class="head"><span class="id">1</span><h2>Onde o tempo vai: etapas empilhadas</h2><span class="tag">1B</span></div>
+      <p class="what">Tempo total dividido por etapa, fora do container. Em cada quantidade, a barra da esquerda é threads (T) e a da direita é processos (P). Só a análise das ações é dividida entre os trabalhadores; leitura e preparação não encolhem.</p>
+      <div class="legend"><span><i class="sq" style="background:var(--c-ativo)"></i>análise das ações</span><span><i class="sq" style="background:var(--c-prep)"></i>preparação + junção final</span><span><i class="sq" style="background:var(--c-leit)"></i>leitura dos CSVs</span><span><b style="font-weight:500">T</b> = threads · <b style="font-weight:500">P</b> = processos</span></div>
+      <div class="chartbox"><svg id="c1b" viewBox="0 0 700 350" role="img" aria-label="Tempo total empilhado por etapa, threads e processos"></svg></div>
+    </section>
+
+    <section class="card">
+      <div class="head"><span class="id">2</span><h2>Tempo por ativo em cada configuração e ambiente</h2><span class="tag">2C</span></div>
+      <p class="what">O número é o tempo por ativo; a cor compara com o sequencial do mesmo ambiente. Azul = mais rápido, vermelho = mais lento.</p>
+      <div class="chartbox"><svg id="c2c" viewBox="0 0 600 400" role="img" aria-label="Mapa de calor do tempo por ativo"></svg></div>
+    </section>
+
+    <section class="card">
+      <div class="head"><span class="id">3</span><h2>Quanto mais CPU o container recebe, mais perto do "fora"</h2><span class="tag">3C</span></div>
+      <p class="what">Eixo X = limite de CPU do container; o losango à direita é a mesma execução fora do container. A linha cinza é o sequencial: o que fica acima dela piorou.</p>
+      <div class="legend"><span><i class="sw" style="border-color:var(--o1)"></i>2 trabalhadores</span><span><i class="sw" style="border-color:var(--o2)"></i>4 trabalhadores</span><span><i class="sw" style="border-color:var(--o4)"></i>8 trabalhadores</span><span><i class="sw dash" style="border-color:var(--muted)"></i>sequencial</span></div>
+      <div class="pair">
+        <div><h3 class="ptitle">threads</h3><div class="chartbox"><svg id="c3t" viewBox="0 0 460 330" role="img" aria-label="Threads: tempo por limite de CPU do container"></svg></div></div>
+        <div><h3 class="ptitle">processos</h3><div class="chartbox"><svg id="c3p" viewBox="0 0 460 330" role="img" aria-label="Processos: tempo por limite de CPU do container"></svg></div></div>
+      </div>
+    </section>
+  </div>
+
+  <footer>Fonte: resultados/analise/benchmark/ (containers) e resultados/analise/benchmark_fora/ (Ubuntu no WSL2), média de 5 repetições.</footer>
+</div>
+<div id="tip" hidden></div>
+
+<script>
+const ENV = {
+  cpu1: { seq: 8.916, t: {2: 9.360, 4: 18.357, 8: 20.963}, p: {2: 9.185, 4: 18.557, 8: 20.651} },
+  cpu2: { seq: 8.761, t: {2: 5.021, 4: 7.589, 8: 13.708}, p: {2: 5.011, 4: 7.571, 8: 13.765} },
+  cpu4: { seq: 9.427, t: {2: 5.353, 4: 3.475, 8: 5.024}, p: {2: 5.430, 4: 3.526, 8: 5.149} },
+  cpu8: { seq: 9.691, t: {2: 5.479, 4: 3.560, 8: 2.909, 16: 2.745}, p: {2: 5.576, 4: 3.613, 8: 2.890, 16: 2.828} },
+  fora: { seq: 10.128, t: {2: 5.815, 4: 3.669, 8: 2.925, 16: 2.839}, p: {2: 5.932, 4: 3.819, 8: 2.883, 16: 2.949} }
+};
+const CPUS = { cpu1: 1, cpu2: 2, cpu4: 4, cpu8: 8, fora: 8 };
+const AMB = ["cpu1", "cpu2", "cpu4", "cpu8"];
+// etapas fora do container, media de 5 execucoes: [leitura, preparacao + entre ativos, por ativo]
+const SEQ = { leitura: 3.994, prep: 1.029 + 0.276, ativo: 10.128 };
+const ETAPAS = {
+  t: { 2: { leitura: 3.672, prep: 1.093 + 0.291, ativo: 5.815 }, 4: { leitura: 3.665, prep: 1.122 + 0.303, ativo: 3.669 },
+       8: { leitura: 3.702, prep: 1.123 + 0.302, ativo: 2.925 }, 16: { leitura: 3.782, prep: 1.099 + 0.313, ativo: 2.839 } },
+  p: { 2: { leitura: 3.732, prep: 1.184 + 0.289, ativo: 5.932 }, 4: { leitura: 3.754, prep: 1.167 + 0.320, ativo: 3.819 },
+       8: { leitura: 3.740, prep: 1.088 + 0.315, ativo: 2.883 }, 16: { leitura: 3.797, prep: 1.042 + 0.313, ativo: 2.949 } }
+};
+const NS = "http://www.w3.org/2000/svg";
+const br = (v, c = 2) => v.toFixed(c).replace(".", ",");
+const log2 = Math.log2;
+function el(parent, tag, attrs = {}, text) {
+  const e = document.createElementNS(NS, tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  if (text !== undefined) e.textContent = text;
+  parent.appendChild(e);
+  return e;
+}
+function roundTop(x, y, w, h, r) {
+  if (h <= 0) return "";
+  r = Math.min(r, h);
+  if (!r) return `M${x} ${y}h${w}v${h}h${-w}Z`;
+  return `M${x} ${y + h}V${y + r}Q${x} ${y} ${x + r} ${y}H${x + w - r}Q${x + w} ${y} ${x + w} ${y + r}V${y + h}Z`;
+}
+
+// ---------- 1: etapas empilhadas ----------
+(function () {
+  const svg = document.getElementById("c1b");
+  const W = 700, H = 350, m = { l: 48, r: 170, t: 34, b: 52 }, yMax = 18;
+  const y = v => H - m.b - (v / yMax) * (H - m.t - m.b);
+  el(svg, "text", { x: 0, y: 12, class: "lbl" }, "tempo total, em segundos (fora do container)");
+  for (const t of [0, 4, 8, 12, 16]) {
+    el(svg, "line", { x1: m.l, x2: W - m.r, y1: y(t), y2: y(t), stroke: "var(--grid)" });
+    el(svg, "text", { x: m.l - 8, y: y(t) + 4, "text-anchor": "end" }, t + " s");
+  }
+  const grupos = [["seq", [["seq", SEQ]]], ...[2, 4, 8, 16].map(n => [String(n), [["T", ETAPAS.t[n]], ["P", ETAPAS.p[n]]]])];
+  const slot = (W - m.l - m.r) / grupos.length, bw = 28, gap = 4;
+  const partes = [["ativo", "var(--c-ativo)", "análise das ações"], ["prep", "var(--c-prep)", "preparação + junção final"], ["leitura", "var(--c-leit)", "leitura dos CSVs"]];
+  grupos.forEach(([n, barras], g) => {
+    const cx = m.l + slot * (g + 0.5);
+    const largura = barras.length * bw + (barras.length - 1) * gap;
+    barras.forEach(([qual, e], b) => {
+      const x0 = cx - largura / 2 + b * (bw + gap);
+      const quem = qual === "seq" ? "sequencial" : `${n} ${qual === "T" ? "threads" : "processos"}`;
+      let base = 0;
+      partes.forEach(([k, cor, nome], j) => {
+        const v = e[k], y1 = y(base + v), y0 = y(base);
+        el(svg, "path", { d: roundTop(x0, y1, bw, y0 - y1 - 2, j === partes.length - 1 ? 4 : 0), fill: cor });
+        el(svg, "rect", { x: x0, y: y1, width: bw, height: y0 - y1, class: "hit", "data-tip": `${quem} · ${nome}\n${br(v)} s` });
+        // rotulos diretos ao lado da ultima barra (as cores claras nao dependem so da legenda)
+        if (g === grupos.length - 1 && b === barras.length - 1) {
+          const meio = (y1 + y0) / 2;
+          el(svg, "line", { x1: x0 + bw + 4, x2: x0 + bw + 14, y1: meio, y2: meio, stroke: "var(--axis)" });
+          el(svg, "text", { x: x0 + bw + 18, y: meio + 4, class: "lbl" }, nome);
+        }
+        base += v;
+      });
+      el(svg, "text", { x: x0 + bw / 2, y: y(base) - 6, "text-anchor": "middle", style: "font-size:10px" }, br(base, 1));
+      if (qual !== "seq") el(svg, "text", { x: x0 + bw / 2, y: H - m.b + 15, "text-anchor": "middle", class: "lbl" }, qual);
+    });
+    el(svg, "text", { x: cx, y: H - m.b + (n === "seq" ? 15 : 31), "text-anchor": "middle", class: n === "seq" ? "lbl" : "strong" }, n === "seq" ? "sequencial" : n);
+  });
+  el(svg, "line", { x1: m.l, x2: W - m.r, y1: y(0), y2: y(0), stroke: "var(--axis)" });
+  el(svg, "text", { x: (m.l + W - m.r) / 2, y: H - 4, "text-anchor": "middle", class: "lbl" }, "número de trabalhadores (T = threads, P = processos)");
+})();
+
+// ---------- 2: mapa com tempo ----------
+(function () {
+  const svg = document.getElementById("c2c");
+  const cols = ["cpu1", "cpu2", "cpu4", "cpu8", "fora"];
+  const rows = [["seq", 1], ["t", 2], ["t", 4], ["t", 8], ["t", 16], ["p", 2], ["p", 4], ["p", 8], ["p", 16]];
+  const m = { l: 108, t: 30 }, cw = 92, ch = 36, gap = 2;
+  cols.forEach((c, j) => el(svg, "text", { x: m.l + j * cw + cw / 2, y: m.t - 10, "text-anchor": "middle", class: "lbl" }, c));
+  let yy = m.t;
+  rows.forEach(([k, n], i) => {
+    if (i > 0 && rows[i - 1][0] !== k) yy += 10;
+    const nome = k === "seq" ? "sequencial" : (k === "t" ? "threads " : "processos ") + n;
+    el(svg, "text", { x: m.l - 10, y: yy + ch / 2 + 4, "text-anchor": "end", class: k === "seq" ? "strong" : "lbl" }, nome);
+    cols.forEach((c, j) => {
+      const x = m.l + j * cw;
+      const v = k === "seq" ? ENV[c].seq : ENV[c][k][n];
+      if (v === undefined) {
+        el(svg, "rect", { x: x + gap / 2, y: yy + gap / 2, width: cw - gap, height: ch - gap, rx: 4, fill: "none", stroke: "var(--grid)", "stroke-dasharray": "3 3" });
+        el(svg, "text", { x: x + cw / 2, y: yy + ch / 2 + 4, "text-anchor": "middle" }, "não medido");
+        return;
+      }
+      const s = ENV[c].seq / v, t = Math.max(-1, Math.min(1, log2(s) / 2));
+      const pct = Math.round(Math.abs(t) * 100);
+      const fill = `color-mix(in oklab, ${t >= 0 ? "var(--div-pos)" : "var(--div-neg)"} ${pct}%, var(--div-mid))`;
+      el(svg, "rect", { x: x + gap / 2, y: yy + gap / 2, width: cw - gap, height: ch - gap, rx: 4, style: `fill:${fill}` });
+      const txt = el(svg, "text", { x: x + cw / 2, y: yy + ch / 2 + 4, "text-anchor": "middle" }, br(v) + " s");
+      txt.style.fill = pct > 55 ? "#ffffff" : "var(--ink)";
+      if (k !== "seq" && CPUS[c] === n) txt.style.fontWeight = "600";
+      el(svg, "rect", { x, y: yy, width: cw, height: ch, class: "hit", "data-tip": `${nome} em ${c}\n${br(v)} s por ativo · speedup ${br(s)}x` });
+    });
+    yy += ch;
+  });
+  el(svg, "text", { x: m.l, y: yy + 22 }, "negrito = número de trabalhadores igual ao número de CPUs do ambiente");
+})();
+
+// ---------- 3: convergencia para o "fora" ----------
+function painel3(id, kv) {
+  const svg = document.getElementById(id);
+  const tipo = kv === "t" ? "threads" : "processos";
+  const W = 460, H = 330, m = { l: 44, r: 112, t: 26, b: 44 }, yMax = 22;
+  const xs = { cpu1: 0, cpu2: 1, cpu4: 2, cpu8: 3, fora: 4.6 };
+  const x = c => m.l + 14 + (xs[c] / 4.6) * (W - m.l - m.r - 28);
+  const y = v => H - m.b - (v / yMax) * (H - m.t - m.b);
+  el(svg, "text", { x: 0, y: 12, class: "lbl" }, "tempo por ativo, em segundos");
+  for (let t = 0; t <= 20; t += 5) {
+    el(svg, "line", { x1: m.l, x2: W - m.r, y1: y(t), y2: y(t), stroke: "var(--grid)" });
+    el(svg, "text", { x: m.l - 8, y: y(t) + 4, "text-anchor": "end" }, t + " s");
+  }
+  el(svg, "line", { x1: (x("cpu8") + x("fora")) / 2, x2: (x("cpu8") + x("fora")) / 2, y1: m.t, y2: y(0), stroke: "var(--axis)", "stroke-dasharray": "2 4" });
+  for (const c of [...AMB, "fora"]) el(svg, "text", { x: x(c), y: H - m.b + 18, "text-anchor": "middle", class: c === "fora" ? "strong" : "" }, c === "fora" ? "fora" : c);
+  el(svg, "text", { x: (x("cpu1") + x("cpu8")) / 2, y: H - 8, "text-anchor": "middle", class: "lbl" }, "dentro do container, por limite de CPU");
+  el(svg, "line", { x1: m.l, x2: W - m.r, y1: y(0), y2: y(0), stroke: "var(--axis)" });
+  const series = [["seq", null, "var(--muted)", true], [kv, 2, "var(--o1)"], [kv, 4, "var(--o2)"], [kv, 8, "var(--o4)"]];
+  const rotulos = [];
+  for (const [k, n, cor, dash] of series) {
+    const v = c => k === "seq" ? ENV[c].seq : ENV[c][k][n];
+    const nome = k === "seq" ? "sequencial" : n + " " + tipo;
+    const d = AMB.map((c, i) => (i ? "L" : "M") + x(c) + " " + y(v(c))).join(" ");
+    el(svg, "path", { d, fill: "none", stroke: cor, "stroke-width": 2, "stroke-dasharray": dash ? "6 4" : "none" });
+    el(svg, "path", { d: `M${x("cpu8")} ${y(v("cpu8"))}L${x("fora")} ${y(v("fora"))}`, fill: "none", stroke: cor, "stroke-width": 1.5, "stroke-dasharray": "1 4" });
+    for (const c of AMB) {
+      el(svg, "circle", { cx: x(c), cy: y(v(c)), r: 4, fill: cor, stroke: "var(--surface)", "stroke-width": 2 });
+      el(svg, "circle", { cx: x(c), cy: y(v(c)), r: 12, class: "hit", "data-tip": `${nome} em ${c}\n${br(v(c))} s por ativo` });
+    }
+    const fx = x("fora"), fy = y(v("fora"));
+    el(svg, "path", { d: `M${fx} ${fy - 8}L${fx + 7} ${fy}L${fx} ${fy + 8}L${fx - 7} ${fy}Z`, fill: "var(--surface)", stroke: cor, "stroke-width": 2 });
+    el(svg, "circle", { cx: fx, cy: fy, r: 12, class: "hit", "data-tip": `${nome} fora do container\n${br(v("fora"))} s por ativo` });
+    rotulos.push({ fy, nome });
+  }
+  // rotulos do "fora": de cima para baixo, cada um pelo menos 14 px abaixo do anterior
+  rotulos.sort((a, b) => a.fy - b.fy);
+  let ultimo = -Infinity;
+  const fx = x("fora");
+  for (const r of rotulos) {
+    const ly = Math.max(r.fy, ultimo + 14);
+    ultimo = ly;
+    el(svg, "path", { d: `M${fx + 10} ${r.fy}L${fx + 16} ${r.fy}L${fx + 22} ${ly}L${fx + 26} ${ly}`, fill: "none", stroke: "var(--axis)" });
+    el(svg, "text", { x: fx + 29, y: ly + 4, class: "lbl" }, r.nome);
+  }
+  el(svg, "text", { x: x("cpu1") + 10, y: y(ENV.cpu1[kv][8]) + 4, class: "lbl" }, `8 ${tipo} com 1 CPU: ${br(ENV.cpu1[kv][8], 0)} s`);
+}
+painel3("c3t", "t");
+painel3("c3p", "p");
+
+// ---------- tooltip ----------
+const tip = document.getElementById("tip");
+document.addEventListener("pointermove", ev => {
+  const t = ev.target.closest && ev.target.closest("[data-tip]");
+  if (!t) { tip.hidden = true; return; }
+  tip.textContent = t.getAttribute("data-tip");
+  tip.hidden = false;
+  const r = tip.getBoundingClientRect();
+  let left = ev.clientX + 14, top = ev.clientY + 14;
+  if (left + r.width > innerWidth - 8) left = ev.clientX - r.width - 14;
+  if (top + r.height > innerHeight - 8) top = ev.clientY - r.height - 14;
+  tip.style.left = left + "px"; tip.style.top = top + "px";
+});
+</script>

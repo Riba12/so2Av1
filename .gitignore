@@ -1,0 +1,30 @@
+/analise-mercado/*
+
+# codigo da analise (o build/ gerado pelo make fica de fora)
+!/analise-mercado/analise/
+/analise-mercado/analise/build/
+
+# dados de entrada: so os CSVs por ano e os ajustes de eventos (qualquer outra coisa em dados/ fica de fora)
+!/analise-mercado/dados/
+/analise-mercado/dados/*
+!/analise-mercado/dados/processados/
+!/analise-mercado/dados/eventos/
+
+# resultados: so os benchmarks e os graficos. Os CSVs e relatorios .md, que cada execucao recria, ficam de fora.
+!/analise-mercado/resultados/
+/analise-mercado/resultados/*
+!/analise-mercado/resultados/analise/
+/analise-mercado/resultados/analise/*
+!/analise-mercado/resultados/analise/benchmark/
+!/analise-mercado/resultados/analise/benchmark_fora/
+!/analise-mercado/resultados/analise/graficos/
+
+# configuracoes do editor
+.vscode/
+
+# temporarios
+*.o
+*.tmp
+*.log
+*.bak
+*.swp

@@ -1,0 +1,4 @@
+# O projeto roda em Linux (container): guarda e entrega todo texto com fim de linha LF,
+# mesmo editando no Windows.
+* text=auto eol=lf
+*.pdf binary

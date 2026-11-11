@@ -1,0 +1,45 @@
+# Configuracao comum aos 4 containers. "&base" da um nome a este bloco; "<<: *base" copia ele
+# para dentro de cada servico, que so acrescenta o que muda (o limite de CPU).
+x-base: &base
+  image: so2-projeto-av1
+  build: .
+  volumes:
+    - .:/app
+  working_dir: /app/analise-mercado
+  environment:
+    TZ: America/Sao_Paulo   # horario de Brasilia (o padrao do container e UTC)
+  stdin_open: true
+  tty: true
+  command: bash
+
+services:
+  cpu1:
+    <<: *base
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+
+  cpu2:
+    <<: *base
+    deploy:
+      resources:
+        limits:
+          cpus: "2"
+
+  cpu4:
+    <<: *base
+    deploy:
+      resources:
+        limits:
+          cpus: "4"
+
+  cpu8:    # nesta maquina (i5-1135G7: 4 nucleos fisicos, 8 logicos) equivale ao "livre"
+    <<: *base
+    deploy:
+      resources:
+        limits:
+          cpus: "8"
+
+  livre:   # sem limite de CPU (usa todos os nucleos da maquina)
+    <<: *base
