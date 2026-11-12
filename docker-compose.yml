@@ -2,7 +2,6 @@
 # para dentro de cada servico, que so acrescenta o que muda (o limite de CPU).
 x-base: &base
   image: so2-projeto-av1
-  build: .
   volumes:
     - .:/app
   working_dir: /app/analise-mercado
@@ -15,6 +14,7 @@ x-base: &base
 services:
   cpu1:
     <<: *base
+    build: .   # Define o build apenas aqui para evitar concorrencia ao salvar a imagem
     deploy:
       resources:
         limits:
